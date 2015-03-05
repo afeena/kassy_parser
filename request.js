@@ -34,21 +34,49 @@ var req = http.request(options, function (res) {
 		});
 
 		var events= new Array();
-		events_links.forEach(function(element){
+		//events_links.forEach(function(element){
 			var event_options = {
 				hostname:'www.chel.kassy.ru',
-				path:element
+				path:'/event/12985604/'
 			}
 
 			var event_req = http.request(event_options,function(res){
 				var event_page = "";
+				var event={
+					link:'',
+					title:'',
+					date:'',
+					place:''
+				};
 				res.setEncoding('utf8');
 
 				res.on('data', function (chunk) {
 					event_page += chunk;
+
 				});
 
 				res.on('end',function(){
+
+					parser.parseComplete(event_page);
+					parsed_html=handler.dom;
+					//event.title=parsed_html[1].children[0].children[5].children[0].data;
+
+
+					function search_prop(obj) {
+						for (property in obj) {
+							console.log(property + ": " + obj[property]+"    "+typeof(obj[property]));
+
+							if (typeof(obj[property]) == "object") {
+								search_prop(obj[property]);
+
+							}
+
+						}
+					};
+					search_prop(parsed_html);
+					//console.log(JSON.stringify(parsed_html,null,2));
+					event.link=event_options.hostname+event_options.path;
+
 
 
 
@@ -60,9 +88,11 @@ var req = http.request(options, function (res) {
 			event_req.on('error', function (e) {
 				console.log('problem with request: ' + e.message);
 			});
-
 			event_req.end();
-		});
+
+
+		//});
+
 
 	});
 });
