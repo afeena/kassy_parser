@@ -61,19 +61,23 @@ var req = http.request(options, function (res) {
 					parsed_html=handler.dom;
 					//event.title=parsed_html[1].children[0].children[5].children[0].data;
 
-
+					var path = new Array();
 					function search_prop(obj) {
 						for (property in obj) {
-							console.log(property + ": " + obj[property]+"    "+typeof(obj[property]));
+							path.push(property);
+							console.log(property + ": " + obj[property]+"    "+typeof(obj[property])+"  "+path);
 
 							if (typeof(obj[property]) == "object") {
 								search_prop(obj[property]);
 
 							}
+							else{
+								path.pop();
+							}
 
 						}
 					};
-					search_prop(parsed_html);
+					search_prop(parsed_html[1]);
 					//console.log(JSON.stringify(parsed_html,null,2));
 					event.link=event_options.hostname+event_options.path;
 
