@@ -6,8 +6,33 @@ var options = {
 	path: '/koncerty-i-shou/events/?range=3'
 
 };
+var prop = new Array();
 var handler = new htmlparser.DefaultHandler(
-	function (error) {}
+	function (error,dom) {}
+	, {verbose: false, ignoreWhitespace: true}
+);
+
+var event_handler = new htmlparser.DefaultHandler(
+	function (error,dom) {
+		if(error) {
+			console.log("error" + error);
+		}
+		else{
+			prop = [];
+			var title = htmlparser.DomUtils.getElementsByTagName("title", dom);
+			title = htmlparser.DomUtils.getElementsByTagType("text",title);
+			prop.push(title[0].data);
+			var date = htmlparser.DomUtils.getElements({tag_name:"td", class:"date"},dom);
+			date = htmlparser.DomUtils.getElementsByTagType("text",date);
+			prop.push(date[0].data);
+			var hall = htmlparser.DomUtils.getElementsByTagName("td",dom);
+			hall = htmlparser.DomUtils.getElementsByTagName("a",hall);
+			hall = htmlparser.DomUtils.getElementsByTagType("text",hall);
+			prop.push(hall[0].data);
+			return prop;
+		}
+	}
+
 	, {verbose: false, ignoreWhitespace: true}
 );
 
@@ -34,19 +59,20 @@ var req = http.request(options, function (res) {
 		});
 
 		var events= new Array();
-		//events_links.forEach(function(element){
+		events_links.forEach(function(element){
 			var event_options = {
 				hostname:'www.chel.kassy.ru',
-				path:'/event/12985604/'
+				path:element
 			}
 
 			var event_req = http.request(event_options,function(res){
+				var events = new Array();
 				var event_page = "";
-				var event={
-					link:'',
-					title:'',
-					date:'',
-					place:''
+				function make_event (link,title,date,hall){
+					this.link = link;
+					this.title = title;
+					this.date = date;
+					this.hall = hall;
 				};
 				res.setEncoding('utf8');
 
@@ -56,34 +82,12 @@ var req = http.request(options, function (res) {
 				});
 
 				res.on('end',function(){
-
-					parser.parseComplete(event_page);
-					parsed_html=handler.dom;
-					//event.title=parsed_html[1].children[0].children[5].children[0].data;
-
-					var path = new Array();
-					function search_prop(obj) {
-						for (property in obj) {
-							path.push(property);
-							console.log(property + ": " + obj[property]+"    "+typeof(obj[property])+"  "+path);
-
-							if (typeof(obj[property]) == "object") {
-								search_prop(obj[property]);
-
-							}
-							else{
-								path.pop();
-							}
-
-						}
-					};
-					search_prop(parsed_html[1]);
-					//console.log(JSON.stringify(parsed_html,null,2));
-					event.link=event_options.hostname+event_options.path;
-
-
-
-
+					var event_parser = new htmlparser.Parser(event_handler);
+					event_parser.parseComplete(event_page);
+					var link = event_options.hostname+event_options.path;
+					var event =new  make_event(link,prop[0],prop[1],prop[2]);
+					events.push(event);
+					console.log(events);
 				});
 
 
@@ -95,7 +99,7 @@ var req = http.request(options, function (res) {
 			event_req.end();
 
 
-		//});
+		});
 
 
 	});
