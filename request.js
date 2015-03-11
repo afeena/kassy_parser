@@ -1,5 +1,6 @@
 var htmlparser = require("htmlparser");
 var http = require('http');
+var async = require('async');
 
 var options = {
 	hostname: 'www.chel.kassy.ru',
@@ -58,8 +59,9 @@ var req = http.request(options, function (res) {
 			return events_links.indexOf(elem) == pos;
 		});
 
-		var events= new Array();
-		events_links.forEach(function(element){
+
+
+		async.forEach(events_links,function(element,callback){
 			var event_options = {
 				hostname:'www.chel.kassy.ru',
 				path:element
@@ -88,6 +90,7 @@ var req = http.request(options, function (res) {
 					var event =new  make_event(link,prop[0],prop[1],prop[2]);
 					events.push(event);
 					console.log(events);
+					callback();
 				});
 
 
