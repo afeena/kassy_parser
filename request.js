@@ -1,47 +1,18 @@
 var htmlparser = require("htmlparser");
+var cheerio = require("cheerio");
 var http = require('http');
 var async = require('async');
 
+
 var options = {
 	hostname: 'www.chel.kassy.ru',
-	path: '/koncerty-i-shou/events/?range=3'
+	path: '/koncerty-i-shou/events/?range=4'
 
 };
-var prop = new Array();
-var handler = new htmlparser.DefaultHandler(
-	function (error, dom) {
-	}
-	, {verbose: false, ignoreWhitespace: true}
-);
-
-var event_handler = new htmlparser.DefaultHandler(
-	function (error, dom) {
-		if (error) {
-			console.log("error" + error);
-		}
-		else {
-			prop = [];
-			var title = htmlparser.DomUtils.getElementsByTagName("title", dom);
-			title = htmlparser.DomUtils.getElementsByTagType("text", title);
-			prop.push(title[0].data);
-			var date = htmlparser.DomUtils.getElements({tag_name: "td", class: "date"}, dom);
-			date = htmlparser.DomUtils.getElementsByTagType("text", date);
-			prop.push(date[0].data);
-			var hall = htmlparser.DomUtils.getElementsByTagName("td", dom);
-			hall = htmlparser.DomUtils.getElementsByTagName("a", hall);
-			hall = htmlparser.DomUtils.getElementsByTagType("text", hall);
-			prop.push(hall[0].data);
-			return prop;
-		}
-	}
-
-	, {verbose: false, ignoreWhitespace: true}
-);
-
-var str = '';
-
+console.time('test');
 async.waterfall([
 	function (callback) {
+		var str='';
 		var events_links;
 		var req = http.request(options, function (res) {
 
@@ -52,12 +23,9 @@ async.waterfall([
 
 			res.on('end', function () {
 
-				var parser = new htmlparser.Parser(handler);
-				parser.parseComplete(str);
-				var parsed_html = JSON.stringify(handler.dom, null, 2);
-				var reg = new RegExp('/event/[0-9]+/', 'g');
 
-				events_links = parsed_html.match(reg);
+				var reg = new RegExp('/event/[0-9]+/', 'g');
+				events_links = str.match(reg);
 				events_links = events_links.filter(function (elem, pos) {
 					return events_links.indexOf(elem) == pos;
 				});
@@ -99,13 +67,19 @@ async.waterfall([
 				});
 
 				res.on('end', function () {
-					var event_parser = new htmlparser.Parser(event_handler);
-					event_parser.parseComplete(event_page);
+					$=cheerio.load(event_page);
+
+					var date=$('td[class=date]').text();
+					var hall=$('td').children('a').prev().text();
+					var title=$('title').text();
+
+
 					var link = event_options.hostname + event_options.path;
-					var event = new make_event(link, prop[0], prop[1], prop[2]);
+					var event = new make_event(link, title, date, hall);
 					events.push(event);
-					console.log(events);
-					//callback(null);
+					callback(null,events);
+					//console.log(events);
+
 				});
 
 
@@ -114,10 +88,14 @@ async.waterfall([
 				console.log('problem with request: ' + e.message);
 			});
 			event_req.end();
-			callback(null);
+
 
 
 		});
-	}], function (err) {
-		console.log("error:"+err);
+	}], function (err,result) {
+		if(err){
+			console.log("error:"+err);
+		}
+		console.log(result);
+	console.timeEnd('test');
 })
