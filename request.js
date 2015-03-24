@@ -157,7 +157,8 @@ async.waterfall([
 
 		var date = element.date.split(',');
 		date = date[0] + ', 2015' + date[1];
-		date = (new Date(date)).toISOString();
+		date = new Date (date);
+
 
 
 		return [(new Date()).toISOString(), element.link, element.title, date, element.place];
