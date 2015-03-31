@@ -126,6 +126,7 @@ async.waterfall([
 					var $ = cheerio.load(event_page);
 
 					var date = $('td[class=date]').first().text();
+					console.log(date);
 					var place = $('td').children('a').first().text();
 					var title = $('title').text();
 
@@ -156,11 +157,12 @@ async.waterfall([
 	var query_array = result.map(function (element) {
 
 		var date = element.date.split(',');
-		date = date[0] + ', 2015' + date[1];
+		var now=new Date();
+		var year = now.getFullYear();
+		date = date[0] + year+',' + date[1];
 		date = new Date (date);
-
-
-
+		if(date.getMonth()<(new Date).getMonth())
+			date.setFullYear(year+1)
 		return [(new Date()).toISOString(), element.link, element.title, date, element.place];
 	});
 	if (err) {
